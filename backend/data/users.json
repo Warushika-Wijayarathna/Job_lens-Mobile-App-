@@ -1,0 +1,95 @@
+[
+  {
+    "id": "b9c7ea18-7d3b-4d98-9632-8074cd6cb310",
+    "email": "www.thilankathushani@gmail.com",
+    "first_name": "",
+    "last_name": "",
+    "skills": [
+      "python",
+      "react",
+      "javascript",
+      "docker",
+      "aws"
+    ],
+    "experience_years": 3,
+    "location": "Remote",
+    "created_at": "2025-09-16T03:29:45.196485813+00:00",
+    "updated_at": "2025-09-20T09:43:04.934203506+00:00",
+    "resume_filename": "b9c7ea18-7d3b-4d98-9632-8074cd6cb310_1757995534_resume.pdf"
+  },
+  {
+    "id": "81e2ed0e-69c7-428d-9e05-2a3f4ec4a28f",
+    "email": "wije@gmail.com",
+    "password_hash": "$2b$12$c6YoUBbrbg8RDEuSkeD2SeX9.6x9n3ipQkNto4xdPAMnESpT502wK",
+    "first_name": "wije",
+    "last_name": "wije",
+    "skills": [],
+    "experience_years": 0,
+    "location": "",
+    "created_at": "2025-09-16T04:21:40.132007469+00:00",
+    "updated_at": "2025-09-16T04:21:40.132007469+00:00"
+  },
+  {
+    "id": "2f74318b-00b7-48cf-a86f-74f7427b08c8",
+    "email": "test@gmail.com",
+    "password_hash": "$2b$12$9T264pUj4Y8fuAgJVCtInO2zw6LkBUCMt//tVsYE9rVmM9b8NV/U.",
+    "first_name": "Kamal",
+    "last_name": "Supipi",
+    "skills": [],
+    "experience_years": 0,
+    "location": "",
+    "created_at": "2025-09-22T05:20:27.946233+00:00",
+    "updated_at": "2025-09-22T07:12:49.515072+00:00",
+    "resume_filename": "2f74318b-00b7-48cf-a86f-74f7427b08c8_1758525169_H.P.G.A.S.%20Herath%20-%20CV.pdf"
+  },
+  {
+    "id": "c6cf35bc-c253-4f0f-a04f-250e3fc6e926",
+    "email": "test1@gmail.com",
+    "password_hash": "$2b$12$/OCdPqaLLpp3ZozVhrr..ubgebtzO1a1VTwQZcf7G2i9fan.LWKE2",
+    "first_name": "Nimal",
+    "last_name": "Kumasi",
+    "skills": [],
+    "experience_years": 0,
+    "location": "",
+    "created_at": "2025-09-22T05:31:33.727806+00:00",
+    "updated_at": "2025-09-22T05:31:33.727806+00:00"
+  },
+  {
+    "id": "b6dda3e6-1b91-4f25-89b0-19478098cab4",
+    "email": "test2@gmail.com",
+    "password_hash": "$2b$12$ZY0mLw067bxfIWMFsl/lju7XWZZX//bQvNkbNz/.Xt.dz.jjyjL/q",
+    "first_name": "Sunitha",
+    "last_name": "Lawmaking",
+    "skills": [],
+    "experience_years": 0,
+    "location": "",
+    "created_at": "2025-09-22T05:44:30.602290+00:00",
+    "updated_at": "2025-09-22T05:44:30.602290+00:00"
+  },
+  {
+    "id": "df5ff1eb-cf26-4141-a6f7-a5505e1b24c4",
+    "email": "kamani@gmail.com",
+    "password_hash": "$2b$12$P17RBu5DYU0FgrSVmBfVEuo17O5prhiGJdx33DXG.f.t7m1PD5DeW",
+    "first_name": "Kamani",
+    "last_name": "Kumari",
+    "skills": [],
+    "experience_years": 0,
+    "location": "",
+    "created_at": "2025-09-22T07:15:28.656851+00:00",
+    "updated_at": "2025-09-22T07:16:16.806939+00:00",
+    "resume_filename": "df5ff1eb-cf26-4141-a6f7-a5505e1b24c4_1758525376_H.P.G.A.S.%20Herath%20-%20CV.pdf"
+  },
+  {
+    "id": "512740e2-9081-426e-9307-d64f08ecceee",
+    "email": "ashi@gmail.com",
+    "password_hash": "$2b$12$GGWu56eFL6Xkmivc/SFb6OOemTRH2Yg5BsbLDpeSPDoLXkQHG5fam",
+    "first_name": "Ashanti",
+    "last_name": "Warushika",
+    "skills": [],
+    "experience_years": 0,
+    "location": "",
+    "created_at": "2025-09-22T07:45:20.184294+00:00",
+    "updated_at": "2025-09-22T07:48:50.247027+00:00",
+    "resume_filename": "512740e2-9081-426e-9307-d64f08ecceee_1758527330_H.P.G.A.S.%20Herath%20-%20CV.pdf"
+  }
+]

@@ -1,0 +1,62 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "4"
+actix-cors = "0.6"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+
+# HTTP client for external API calls
+reqwest = { version = "0.11", features = ["json"] }
+
+# URL encoding for API parameters
+urlencoding = "2.1"
+
+# Database - enable macros feature
+sqlx = { version = "0.6", features = ["runtime-tokio-rustls", "postgres", "chrono", "uuid", "macros"], default-features = false }
+
+# Text processing
+regex = "1.0"
+
+# Async and concurrency
+futures = "0.3"
+
+# Logging and monitoring
+env_logger = "0.10"
+
+# Configuration
+dotenv = "0.15"
+
+# Security
+bcrypt = "0.14"
+jsonwebtoken = "8"
+
+# Crypto for token encryption
+aes-gcm = "0.10"
+aes = "0.8"
+aead = "0.5"
+rand = "0.8"
+base64 = "0.21"
+
+# URL utils
+thiserror = "1.0"
+
+# Authentication middleware
+actix-web-httpauth = "0.8"
+
+# File uploads
+actix-multipart = "0.6"
+# Stream utilities used by multipart processing
+futures-util = "0.3"
+
+# Serve file MIME types
+mime_guess = "2"
+
+# CSV parsing for dataset model
+csv = "1.3"
