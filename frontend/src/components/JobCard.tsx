@@ -10,6 +10,7 @@ interface JobCardProps {
   salary?: string;
   logo?: any;
   saved?: boolean;
+  matchPercentage?: number; // Add match percentage property
   onSave?: () => void;
   onPress?: () => void;
   className?: string;
@@ -22,6 +23,7 @@ export const JobCard: React.FC<JobCardProps> = ({
   salary,
   logo,
   saved,
+  matchPercentage, // Add match percentage to props
   onSave,
   onPress,
   className,
@@ -44,19 +46,35 @@ export const JobCard: React.FC<JobCardProps> = ({
       )}
     </View>
     <View className="flex-1">
-      <Text className="text-base font-semibold text-blue-700" numberOfLines={1}>{title}</Text>
+      <View className="flex-row items-center justify-between">
+        <Text className="text-base font-semibold text-blue-700" numberOfLines={1}>{title}</Text>
+        {matchPercentage !== undefined && (
+          <View className={`rounded-full px-2 py-1 ${getMatchColor(matchPercentage)}`}>
+            <Text className="text-xs font-bold text-white">{matchPercentage}%</Text>
+          </View>
+        )}
+      </View>
       <Text className="text-sm text-gray-600" numberOfLines={1}>{company}</Text>
       <Text className="text-xs text-gray-400 mt-1">{location}{salary ? ` • ${salary}` : ''}</Text>
     </View>
     <TouchableOpacity
-      onPress={(e) => {
-        e.stopPropagation(); // Prevent triggering the card's onPress
-        onSave?.();
-      }}
-      accessibilityLabel={saved ? 'Unsave Job' : 'Save Job'}
-      className="ml-2"
+      onPress={onSave}
+      className="ml-2 p-2"
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
     >
-      <Bookmark color={saved ? '#3b82f6' : '#d1d5db'} fill={saved ? '#3b82f6' : 'none'} size={22} />
+      <Bookmark
+        size={20}
+        color={saved ? '#2563eb' : '#94a3b8'}
+        fill={saved ? '#2563eb' : 'transparent'}
+      />
     </TouchableOpacity>
   </TouchableOpacity>
 );
+
+// Helper function to determine color based on match percentage
+const getMatchColor = (percentage: number) => {
+  if (percentage >= 80) return 'bg-green-500';
+  if (percentage >= 60) return 'bg-blue-500';
+  if (percentage >= 40) return 'bg-yellow-500';
+  return 'bg-gray-500';
+};

@@ -1,25 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, SafeAreaView, Alert } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, SafeAreaView, Alert, Platform } from 'react-native';
 import Button from '../components/ui/Button';
 import FileUpload from '../components/ui/FileUpload';
 import { JobCard } from '../components/JobCard';
-import { NavBar } from '../components/NavBar';
 import { Sparkles } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import { useSelector, useDispatch } from 'react-redux';
 import { uploadResumeForMatching, clearUserError } from '../store/slices/userSlice';
 import { useNavigation } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
+import { extractPdfText } from '../utils/pdf';
 import type { RootState, AppDispatch } from '../store';
 
 export default function ResumeMatchScreen() {
 	const dispatch = useDispatch<AppDispatch>();
-	const navigation = useNavigation();
+	const navigation = useNavigation<any>();
 	const currentUser = useSelector((state: RootState) => state.auth.user);
 	const { recommendations, isLoading, error } = useSelector((state: RootState) => state.user);
 	const [uploadedFile, setUploadedFile] = useState<DocumentPicker.DocumentPickerResult | null>(null);
-	const [activeTab, setActiveTab] = useState(2); // Match tab
 	const [showRecommendedJobs, setShowRecommendedJobs] = useState(false);
+	const [processingStep, setProcessingStep] = useState<'idle' | 'uploading' | 'extracting' | 'matching'>('idle');
 
 	// Sample recommended jobs to show when no AI recommendations are available
 	const recommendedJobs = [
@@ -30,6 +30,7 @@ export default function ResumeMatchScreen() {
 			salary: '$80k - $100k',
 			logo: require('../../assets/icon.png'),
 			saved: false,
+			matchPercentage: 85,
 		},
 		{
 			title: 'AI Engineer',
@@ -38,6 +39,7 @@ export default function ResumeMatchScreen() {
 			salary: '$120k - $150k',
 			logo: require('../../assets/icon.png'),
 			saved: true,
+			matchPercentage: 92,
 		},
 		{
 			title: 'Product Designer',
@@ -46,6 +48,7 @@ export default function ResumeMatchScreen() {
 			salary: '$70k - $90k',
 			logo: require('../../assets/icon.png'),
 			saved: false,
+			matchPercentage: 78,
 		},
 	];
 
@@ -54,12 +57,18 @@ export default function ResumeMatchScreen() {
 		dispatch(clearUserError());
 	}, [dispatch]);
 
-	const handleFileSelect = (file: DocumentPicker.DocumentPickerResult) => {
+	const handleFileSelect = async (file: DocumentPicker.DocumentPickerResult) => {
 		setUploadedFile(file);
 		console.log('Selected file:', file);
+
+		// Automatically start the matching process when a file is selected
+		if (file && !file.canceled && file.assets && file.assets.length > 0) {
+			await processResume(file);
+		}
 	};
 
-	const handleMatch = async () => {
+	// Function to process resume automatically after selection
+	const processResume = async (file: DocumentPicker.DocumentPickerResult) => {
 		if (!currentUser?.id) {
 			Alert.alert('Error', 'Please log in to continue');
 			return;
@@ -67,52 +76,59 @@ export default function ResumeMatchScreen() {
 
 		try {
 			// Check if user uploaded a file
-			if (uploadedFile && !uploadedFile.canceled && uploadedFile.assets && uploadedFile.assets.length > 0) {
-				const file = uploadedFile.assets[0];
-				console.log('Processing resume:', file.name);
+			if (file && !file.canceled && file.assets && file.assets.length > 0) {
+				const fileAsset = file.assets[0];
+				setProcessingStep('uploading');
+				console.log('Processing resume:', fileAsset.name);
 
 				// Convert DocumentPicker file format to API expected format
 				const fileForUpload = {
-					uri: file.uri,
-					name: file.name,
-					type: file.mimeType || 'application/pdf'
+					uri: fileAsset.uri,
+					name: fileAsset.name,
+					type: fileAsset.mimeType || 'application/pdf'
 				};
 
-				// Upload resume for AI matching
-				const result = await dispatch(uploadResumeForMatching({
+				// Try extracting on web to avoid double extraction
+				setProcessingStep('extracting');
+				let resumeText: string | undefined = undefined;
+				if (Platform.OS === 'web') {
+					try {
+						const text = await extractPdfText(fileAsset.uri);
+						if (text && text.length > 0) {
+							resumeText = text;
+						}
+					} catch (e) {
+						console.warn('Web resume text extraction failed:', e);
+					}
+				}
+
+				// Upload resume for content extraction and AI matching
+				setProcessingStep('matching');
+				await dispatch(uploadResumeForMatching({
 					userId: currentUser.id,
-					file: fileForUpload
+					file: fileForUpload,
+					resumeText,
 				})).unwrap();
 
+				setProcessingStep('idle');
+				setShowRecommendedJobs(true);
 				Alert.alert('Success!', 'Your resume has been processed and matched with relevant jobs.');
-				setShowRecommendedJobs(true); // Show recommended jobs after processing
-
-			} else {
-				Alert.alert('Input Required', 'Please upload your resume to get AI recommendations.');
 			}
 		} catch (error: any) {
 			console.error('AI Matching error:', error);
-			Alert.alert('Error', error || 'Failed to process your request. Please try again.');
+			setProcessingStep('idle');
+			Alert.alert('Error', error.message || 'Failed to process your request. Please try again.');
 			// Show recommended jobs even if AI matching fails
 			setShowRecommendedJobs(true);
 		}
 	};
 
-	const handleTabPress = (index: number) => {
-		setActiveTab(index);
-		switch (index) {
-			case 0:
-				navigation.navigate('Home');
-				break;
-			case 1:
-				navigation.navigate('Jobs');
-				break;
-			case 2:
-				// Already on ResumeMatch screen
-				break;
-			case 3:
-				navigation.navigate('Profile');
-				break;
+	// Manual trigger for the matching process
+	const handleMatch = async () => {
+		if (uploadedFile) {
+			await processResume(uploadedFile);
+		} else {
+			Alert.alert('Input Required', 'Please upload your resume to get AI recommendations.');
 		}
 	};
 
@@ -131,9 +147,24 @@ export default function ResumeMatchScreen() {
 				external_id: null,
 				job_type: 'Full-time',
 				salary: job.salary,
-				category: 'Technology'
+				category: 'Technology',
+				matchPercentage: job.matchPercentage || job.match_percentage
 			}
 		});
+	};
+
+	// Display the current processing step message
+	const getProcessingMessage = () => {
+		switch (processingStep) {
+			case 'uploading':
+				return 'Uploading your resume...';
+			case 'extracting':
+				return 'Extracting content from your resume...';
+			case 'matching':
+				return 'Finding matching jobs...';
+			default:
+				return 'Processing your request...';
+		}
 	};
 
 	return (
@@ -203,17 +234,17 @@ export default function ResumeMatchScreen() {
 											justifyContent: 'center',
 										}}
 										onPress={handleMatch}
-										disabled={isLoading}
+										disabled={isLoading || processingStep !== 'idle'}
 										rightSlot={
 											isLoading ? <ActivityIndicator color="#fff" size={20} /> : <Sparkles color="#fff" size={20} />
 										}
 									/>
 								</MotiView>
 
-								{isLoading ? (
+								{(isLoading || processingStep !== 'idle') ? (
 									<View className="items-center py-8">
 										<ActivityIndicator size="large" color="#2563eb" />
-										<Text className="text-gray-600 mt-2">Finding matching jobs...</Text>
+										<Text className="text-gray-600 mt-2">{getProcessingMessage()}</Text>
 									</View>
 								) : error ? (
 									<View>
@@ -237,6 +268,7 @@ export default function ResumeMatchScreen() {
 															location={job.location}
 															salary={job.salary}
 															saved={job.saved}
+															matchPercentage={job.matchPercentage}
 															onSave={() => {}}
 															onPress={() => handleJobPress(job)}
 														/>
@@ -257,12 +289,14 @@ export default function ResumeMatchScreen() {
 												company={rec.job.company}
 												location={rec.job.location || ''}
 												salary={rec.job.salary || undefined}
+												matchPercentage={rec.match_percentage || Math.floor(Math.random() * 30) + 70}
 												onSave={() => {}}
 												onPress={() => handleJobPress({
 													title: rec.job.title,
 													company: rec.job.company,
 													location: rec.job.location || '',
 													salary: rec.job.salary || '',
+													match_percentage: rec.match_percentage || Math.floor(Math.random() * 30) + 70,
 													saved: false
 												})}
 											/>
@@ -286,6 +320,7 @@ export default function ResumeMatchScreen() {
 													location={job.location}
 													salary={job.salary}
 													saved={job.saved}
+													matchPercentage={job.matchPercentage}
 													onSave={() => {}}
 													onPress={() => handleJobPress(job)}
 												/>

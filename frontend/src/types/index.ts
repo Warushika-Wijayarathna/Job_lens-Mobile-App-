@@ -63,9 +63,12 @@ export interface JobSearchParams {
 
 export interface JobRecommendation {
   job: Job;
-  match_score: number;
-  explanation: string;
-  matching_skills: string[];
+  // Support both shapes
+  match_score?: number;
+  match_percentage?: number;
+  explanation?: string;
+  matching_skills?: string[];
+  skills_matched?: number;
   missing_skills: string[];
 }
 

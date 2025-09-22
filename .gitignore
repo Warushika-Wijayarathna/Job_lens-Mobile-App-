@@ -1,0 +1,44 @@
+# Environment and secrets
+.env
+*.env
+**/.env
+.env.*
+
+# Data files
+*.csv
+*.tsv
+*.parquet
+*.feather
+*.xlsx
+
+# Datasets and notebooks
+/dataset/
+**/*.ipynb
+
+# Build and cache outputs
+/backend/target/
+/frontend/node_modules/
+/frontend/.expo/
+**/.cache/
+**/.turbo/
+**/.next/
+**/dist/
+**/build/
+
+# Uploads and generated files
+/backend/uploads/
+/uploads/
+
+# ML artifacts
+/backend/ml_service/joblens_model.joblib
+**/__pycache__/
+
+# Logs
+*.log
+
+# IDE/editor
+/.idea/
+*.iml
+.DS_Store
+.vscode/
+

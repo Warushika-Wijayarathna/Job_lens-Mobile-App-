@@ -64,3 +64,10 @@ pub struct JobsResponse {
     pub offset: usize,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct JobRecommendation {
+    pub job: Job,
+    pub match_percentage: i32,
+    pub skills_matched: i32,
+    pub missing_skills: Vec<String>,
+}

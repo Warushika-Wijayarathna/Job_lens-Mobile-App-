@@ -35,6 +35,7 @@ async fn main() -> std::io::Result<()> {
                     .configure(routes::auth::config)
                     .configure(routes::users::config)
                     .configure(routes::jobs::config)
+                    .configure(routes::resume::config)
             )
     })
     .bind((host.as_str(), port))?

@@ -72,13 +72,13 @@ export const submitUserFeedback = createAsyncThunk<
 
 export const uploadResumeForMatching = createAsyncThunk<
   { recommendations: JobRecommendation[]; resume_text: string },
-  { userId: string; file: { uri: string; name: string; type: string } },
+  { userId: string; file: { uri: string; name: string; type: string }; resumeText?: string },
   { rejectValue: string }
 >(
   'user/uploadResumeForMatching',
-  async ({ userId, file }, { rejectWithValue }) => {
+  async ({ userId, file, resumeText }, { rejectWithValue }) => {
     try {
-      const response = await apiService.uploadResumeForMatching(userId, file);
+      const response = await apiService.uploadResumeForMatching(userId, file, { resumeText });
       if (response.success && response.data) {
         return response.data;
       } else {

@@ -72,9 +72,7 @@ class ApiService {
     this.api = axios.create({
       baseURL: BASE_URL,
       timeout: 30000, // increased default timeout to 30s
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      // Do not set a global Content-Type header; let Axios set it per request.
     });
 
     // Add auth token to requests
@@ -340,35 +338,38 @@ class ApiService {
     return response.data;
   }
 
-  // New: AI Resume Matching - upload resume and get job recommendations
+  // ---------------- Resume Processing and Job Matching ----------------
   async uploadResumeForMatching(
     userId: string,
-    file: { uri: string; name: string; type: string }
+    file: { uri: string; name: string; type: string },
+    options?: { resumeText?: string }
   ): Promise<ApiResponse<{ recommendations: JobRecommendation[]; resume_text: string }>> {
-    const form = new FormData();
-    // @ts-ignore - React Native FormData file shape
-    form.append('file', { uri: file.uri, name: file.name, type: file.type });
-
-    const response: AxiosResponse<ApiResponse<{ recommendations: JobRecommendation[]; resume_text: string }>> = await this.api.post(
-      `/users/${userId}/resume/match`,
-      form,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 60000 // Increase timeout for AI processing
+    try {
+      const formData = new FormData();
+      formData.append('resume', {
+        uri: file.uri,
+        name: file.name,
+        type: file.type,
+      } as any);
+      formData.append('userId', userId);
+      formData.append('extractContent', options?.resumeText ? 'false' : 'true');
+      if (options?.resumeText) {
+        formData.append('resume_text', options.resumeText);
       }
-    );
-    return response.data;
+
+      const response = await this.api.post('/resume/process', formData);
+
+      return response.data;
+    } catch (error) {
+      console.error('Resume upload error:', error);
+      throw error;
+    }
   }
 
-  // New: Get AI job recommendations based on skills
-  async getAIJobRecommendations(
-    userId: string,
-    skills: string
-  ): Promise<ApiResponse<{ recommendations: JobRecommendation[] }>> {
-    const response: AxiosResponse<ApiResponse<{ recommendations: JobRecommendation[] }>> = await this.api.post(
-      `/users/${userId}/recommendations/skills`,
-      { skills }
-    );
+  // Get AI job recommendations based on extracted text and skills
+  async getAIJobRecommendations(userId: string, skills: string): Promise<ApiResponse<{ recommendations: JobRecommendation[] }>> {
+    const response: AxiosResponse<ApiResponse<{ recommendations: JobRecommendation[] }>> =
+      await this.api.post('/jobs/ai-recommendations', { userId, skills });
     return response.data;
   }
 
