@@ -5,12 +5,13 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
-import { auth } from '../../config/firebase';
+import { auth, db } from '../../config/firebase';
 import { AuthState, LoginCredentials, RegisterData, User } from '../../types';
 import { secureStorage } from '../../utils/secureStorage';
 import { Platform } from 'react-native';
 import { makeRedirectUri, AuthRequest, ResponseType } from 'expo-auth-session';
 import apiService from '../../services/api';
+import { doc, setDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
 
 // Helper function to convert backend user to frontend user format
 const convertBackendUserToFrontend = (backendUser: any): User => {
@@ -26,6 +27,37 @@ const convertBackendUserToFrontend = (backendUser: any): User => {
     updated_at: backendUser.updated_at || new Date().toISOString(),
   };
 };
+
+// Helper: upsert user profile into Firestore and log login event
+async function persistUserAndLoginEvent(params: {
+  user: User;
+  method: 'password' | 'google';
+  platform: string;
+}) {
+  const { user, method, platform } = params;
+  const userRef = doc(db, 'users', user.id);
+  // Upsert basic profile; preserve created_at from backend if available
+  await setDoc(userRef, {
+    email: user.email,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    skills: user.skills || [],
+    experience_years: user.experience_years || 0,
+    location: user.location || '',
+    created_at: user.created_at || serverTimestamp(),
+    updated_at: serverTimestamp(),
+    last_login: serverTimestamp(),
+  }, { merge: true });
+
+  // Log a login event in a separate collection
+  await addDoc(collection(db, 'login_events'), {
+    user_id: user.id,
+    method,
+    platform,
+    timestamp: serverTimestamp(),
+    email: user.email,
+  });
+}
 
 // Google sign-in (web uses popup; native uses AuthRequest to get id_token)
 export const signInWithGoogle = createAsyncThunk<
@@ -51,6 +83,9 @@ export const signInWithGoogle = createAsyncThunk<
         // Convert backend user format to frontend format
         const user = convertBackendUserToFrontend(response.data.user);
         await secureStorage.setItem('user_data', JSON.stringify(user));
+
+        // Persist to Firestore
+        await persistUserAndLoginEvent({ user, method: 'google', platform: Platform.OS });
 
         console.log('[authSlice] signInWithGoogle web success');
         return { user, token: response.data.access_token };
@@ -94,6 +129,9 @@ export const signInWithGoogle = createAsyncThunk<
         const user = convertBackendUserToFrontend(response.data.user);
         await secureStorage.setItem('user_data', JSON.stringify(user));
 
+        // Persist to Firestore
+        await persistUserAndLoginEvent({ user, method: 'google', platform: Platform.OS });
+
         console.log('[authSlice] signInWithGoogle native success');
         return { user, token: response.data.access_token };
       } else {
@@ -122,6 +160,9 @@ export const loginUser = createAsyncThunk<
       const user = convertBackendUserToFrontend(response.data.user);
       await secureStorage.setItem('user_data', JSON.stringify(user));
 
+      // Persist to Firestore
+      await persistUserAndLoginEvent({ user, method: 'password', platform: Platform.OS });
+
       return { user, token: response.data.access_token };
     } else {
       return rejectWithValue(response.message || 'Login failed');
@@ -146,6 +187,9 @@ export const registerUser = createAsyncThunk<
 
       const user = convertBackendUserToFrontend(response.data.user);
       await secureStorage.setItem('user_data', JSON.stringify(user));
+
+      // Persist to Firestore
+      await persistUserAndLoginEvent({ user, method: 'password', platform: Platform.OS });
 
       return { user, token: response.data.access_token };
     } else {

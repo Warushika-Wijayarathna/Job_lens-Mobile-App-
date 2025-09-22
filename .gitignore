@@ -3,6 +3,9 @@
 *.env
 **/.env
 .env.*
+# Allow example env files
+!*.env.example
+!**/.env.example
 
 # Data files
 *.csv
@@ -41,4 +44,3 @@
 *.iml
 .DS_Store
 .vscode/
-
