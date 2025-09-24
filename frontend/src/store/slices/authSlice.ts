@@ -85,7 +85,11 @@ export const signInWithGoogle = createAsyncThunk<
         await secureStorage.setItem('user_data', JSON.stringify(user));
 
         // Persist to Firestore
-        await persistUserAndLoginEvent({ user, method: 'google', platform: Platform.OS });
+        try {
+          await persistUserAndLoginEvent({ user, method: 'google', platform: Platform.OS });
+        } catch (e) {
+          console.warn('[authSlice] Firestore persist (google) failed:', e);
+        }
 
         console.log('[authSlice] signInWithGoogle web success');
         return { user, token: response.data.access_token };
@@ -130,7 +134,11 @@ export const signInWithGoogle = createAsyncThunk<
         await secureStorage.setItem('user_data', JSON.stringify(user));
 
         // Persist to Firestore
-        await persistUserAndLoginEvent({ user, method: 'google', platform: Platform.OS });
+        try {
+          await persistUserAndLoginEvent({ user, method: 'google', platform: Platform.OS });
+        } catch (e) {
+          console.warn('[authSlice] Firestore persist (google native) failed:', e);
+        }
 
         console.log('[authSlice] signInWithGoogle native success');
         return { user, token: response.data.access_token };
@@ -161,7 +169,11 @@ export const loginUser = createAsyncThunk<
       await secureStorage.setItem('user_data', JSON.stringify(user));
 
       // Persist to Firestore
-      await persistUserAndLoginEvent({ user, method: 'password', platform: Platform.OS });
+      try {
+        await persistUserAndLoginEvent({ user, method: 'password', platform: Platform.OS });
+      } catch (e) {
+        console.warn('[authSlice] Firestore persist (login) failed:', e);
+      }
 
       return { user, token: response.data.access_token };
     } else {
@@ -189,7 +201,11 @@ export const registerUser = createAsyncThunk<
       await secureStorage.setItem('user_data', JSON.stringify(user));
 
       // Persist to Firestore
-      await persistUserAndLoginEvent({ user, method: 'password', platform: Platform.OS });
+      try {
+        await persistUserAndLoginEvent({ user, method: 'password', platform: Platform.OS });
+      } catch (e) {
+        console.warn('[authSlice] Firestore persist (register) failed:', e);
+      }
 
       return { user, token: response.data.access_token };
     } else {

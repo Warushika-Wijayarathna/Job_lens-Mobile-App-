@@ -15,6 +15,13 @@ import traceback
 import re
 from pathlib import Path
 
+# Try to import Config for diagnostics
+try:
+    from config import Config  # type: ignore
+except Exception:
+    class Config:  # minimal fallback
+        MODEL_PATH = "joblens_model.joblib"
+
 # NOTE: Do not import JobMatchingModel at module import time; we'll import lazily inside functions.
 
 # Configure logging
@@ -26,6 +33,7 @@ app = Flask(__name__)
 # Global model instance
 model = None
 model_loaded = False
+
 
 def load_model():
     """Load the trained ML model"""
@@ -44,11 +52,13 @@ def load_model():
             dependencies_available = False
             JobMatchingModel = None  # type: ignore
 
-        if dependencies_available and os.path.exists("joblens_model.joblib"):
+        model_path = getattr(Config, 'MODEL_PATH', 'joblens_model.joblib')
+
+        if dependencies_available and os.path.exists(model_path):
             try:
-                logger.info("Loading model from joblens_model.joblib")
+                logger.info(f"Loading model from {model_path}")
                 model_inst = JobMatchingModel()  # type: ignore
-                model_inst.load_model("joblens_model.joblib")
+                model_inst.load_model(model_path)
                 model = model_inst
                 model_loaded = True
                 logger.info("Model loaded successfully!")
@@ -74,6 +84,7 @@ def load_model():
         logger.info("Falling back to simple matching")
         model = create_fallback_matcher()
         model_loaded = True
+
 
 def create_fallback_matcher():
     """Create a fallback matcher when ML dependencies are not available"""
@@ -139,6 +150,7 @@ def create_fallback_matcher():
 
     return FallbackMatcher()
 
+
 def train_new_model():
     """Train a new model if none exists"""
     global model, model_loaded
@@ -174,7 +186,7 @@ def train_new_model():
 
         model_inst = JobMatchingModel()
         model_inst.train(jobs_df)
-        model_inst.save_model("joblens_model.joblib")
+        model_inst.save_model(getattr(Config, 'MODEL_PATH', 'joblens_model.joblib'))
 
         model = model_inst
         model_loaded = True
@@ -184,6 +196,7 @@ def train_new_model():
     except Exception as e:
         logger.error(f"Error training new model: {e}")
         return False
+
 
 def extract_skills_from_text(text):
     """Extract skills from resume or profile text"""
@@ -214,6 +227,17 @@ def extract_skills_from_text(text):
     # Remove duplicates and return
     return list(set(skills))
 
+
+@app.before_first_request
+def _ensure_model_loaded_once():
+    global model_loaded
+    if not model_loaded:
+        try:
+            load_model()
+        except Exception as e:
+            logger.error(f"Model initialization failed: {e}")
+
+
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
@@ -224,6 +248,30 @@ def health_check():
         'service': 'JobLens ML Service'
     })
 
+
+@app.route('/model-info', methods=['GET'])
+def model_info():
+    """Return basic model diagnostics"""
+    model_path = getattr(Config, 'MODEL_PATH', 'joblens_model.joblib')
+    exists = os.path.exists(model_path)
+    size_mb = 0.0
+    try:
+        if exists:
+            size_mb = round(os.path.getsize(model_path) / (1024 * 1024), 2)
+    except Exception:
+        size_mb = 0.0
+    return jsonify({
+        'success': True,
+        'data': {
+            'model_loaded': model_loaded,
+            'model_path': model_path,
+            'model_exists': exists,
+            'model_size_mb': size_mb,
+            'timestamp': datetime.now().isoformat()
+        }
+    })
+
+
 @app.route('/predict', methods=['POST'])
 def predict_match():
     """Main prediction endpoint"""
@@ -231,11 +279,14 @@ def predict_match():
 
     try:
         if not model_loaded or model is None:
-            return jsonify({
-                'success': False,
-                'error': 'Model not loaded. Please check server logs.',
-                'data': None
-            }), 500
+            # Attempt lazy load once more
+            load_model()
+            if not model_loaded or model is None:
+                return jsonify({
+                    'success': False,
+                    'error': 'Model not loaded. Please check server logs.',
+                    'data': None
+                }), 500
 
         # Get request data
         data = request.get_json()
@@ -312,6 +363,7 @@ def predict_match():
             'data': None
         }), 500
 
+
 @app.route('/train', methods=['POST'])
 def train_model():
     """Train a new model endpoint"""
@@ -336,6 +388,7 @@ def train_model():
             'error': f'Training failed: {str(e)}',
             'data': None
         }), 500
+
 
 @app.route('/skills/extract', methods=['POST'])
 def extract_skills():
@@ -369,13 +422,11 @@ def extract_skills():
             'data': None
         }), 500
 
+
 @app.route('/retrain', methods=['POST'])
 def retrain_model():
     """Retrain the model with new data"""
     try:
-        # This is a simplified retraining endpoint
-        # In production, you'd want authentication and more sophisticated logic
-
         success = train_new_model()
 
         if success:
@@ -399,54 +450,6 @@ def retrain_model():
             'timestamp': datetime.now().isoformat()
         }), 500
 
-@app.route('/model-info', methods=['GET'])
-def model_info():
-    """Get information about the current model"""
-    try:
-        if not model_loaded:
-            return jsonify({
-                'success': False,
-                'error': 'Model not loaded',
-                'data': None
-            })
-
-        # Get model statistics
-        model_path = "joblens_model.joblib"
-        model_exists = os.path.exists(model_path)
-        model_size = os.path.getsize(model_path) if model_exists else 0
-
-        # Check semantic model status if available
-        semantic_loaded = False
-        try:
-            semantic_loaded = getattr(model, 'sentence_model', None) is not None
-        except Exception:
-            semantic_loaded = False
-
-        return jsonify({
-            'success': True,
-            'data': {
-                'model_loaded': model_loaded,
-                'model_exists': model_exists,
-                'model_size_mb': round(model_size / (1024 * 1024), 2),
-                'model_path': model_path,
-                'features': {
-                    'text_vectorization': 'TF-IDF with 5000 features',
-                    'algorithm': 'Random Forest Regressor',
-                    'skill_extraction': 'Pattern-based extraction',
-                    'semantic_matching': 'Sentence Transformers (if available)'
-                },
-                'semantic_model_loaded': semantic_loaded,
-                'timestamp': datetime.now().isoformat()
-            }
-        })
-
-    except Exception as e:
-        logger.error(f"Error getting model info: {e}")
-        return jsonify({
-            'success': False,
-            'error': f'Error getting model info: {str(e)}',
-            'data': None
-        }), 500
 
 @app.errorhandler(404)
 def not_found(error):
@@ -455,6 +458,7 @@ def not_found(error):
         'error': 'Endpoint not found',
         'data': None
     }), 404
+
 
 @app.errorhandler(500)
 def internal_error(error):

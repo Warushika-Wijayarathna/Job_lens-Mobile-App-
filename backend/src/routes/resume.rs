@@ -256,8 +256,10 @@ async fn get_job_recommendations(
 
     // Process each job through the ML service
     for job in jobs_for_processing {
+        // Clean HTML tags from job description for better NLP/skill extraction
+        let cleaned_description = strip_html(&job.description);
         let ml_request = serde_json::json!({
-            "job_description": job.description,
+            "job_description": cleaned_description,
             "resume_text": resume_text,
             "user_skills": user_skills,
             "job_title": job.title
@@ -283,7 +285,8 @@ async fn get_job_recommendations(
                                 if match_score > 30.0 {
                                     recommendations.push(JobRecommendation {
                                         job,
-                                        match_percentage: match_score as i32,
+                                        // Round instead of truncating to int
+                                        match_percentage: match_score.round() as i32,
                                         skills_matched: data.get("skill_overlap")
                                             .and_then(|v| v.as_u64())
                                             .unwrap_or(0) as i32,
@@ -337,7 +340,8 @@ fn generate_fallback_recommendations(jobs: &Vec<Job>, resume_text: &str) -> Vec<
 
     // Calculate simple match scores based on keyword frequency
     for job in jobs {
-        let desc_lower = job.description.to_lowercase();
+        // Clean HTML before analysis
+        let desc_lower = strip_html(&job.description).to_lowercase();
         let mut score = 50; // Base score
 
         // Check for skill matches in both resume and job description
@@ -472,4 +476,10 @@ fn sanitize_filename(filename: &str) -> String {
     } else {
         sanitized
     }
+}
+
+/// Strip HTML tags from a string to plain text
+fn strip_html(input: &str) -> String {
+    let re = regex::Regex::new(r"<[^>]+>").unwrap();
+    re.replace_all(input, " ").to_string()
 }

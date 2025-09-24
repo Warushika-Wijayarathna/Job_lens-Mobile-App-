@@ -447,7 +447,9 @@ async fn analyze_job_cv_match(
     // If we have no usable user data, fall back immediately
     if user_skills.is_empty() && resume_text_opt.as_deref().unwrap_or("").is_empty() {
         println!("ℹ️ User has no skills/resume; using fallback analysis");
-        let fallback_analysis = create_fallback_analysis(&job.description, &job.title);
+        // Clean description before fallback analysis
+        let cleaned_desc = strip_html(&job.description);
+        let fallback_analysis = create_fallback_analysis(&cleaned_desc, &job.title);
         return Ok(fallback_analysis);
     }
 
@@ -457,8 +459,10 @@ async fn analyze_job_cv_match(
 
     let prediction_url = format!("{}/predict", ml_service_url);
 
+    // Clean HTML from job description before sending to ML
+    let cleaned_desc = strip_html(&job.description);
     let ml_request = serde_json::json!({
-        "job_description": job.description,
+        "job_description": cleaned_desc,
         "resume_text": resume_text_opt.unwrap_or_default(),
         "user_skills": user_skills,
         "user_experience": user_experience,
@@ -535,7 +539,8 @@ async fn analyze_job_cv_match(
 
     // Fallback to simple analysis if ML service fails
     println!("⚠️ ML service unavailable, using fallback analysis");
-    let fallback_analysis = create_fallback_analysis(&job.description, &job.title);
+    let cleaned_desc = strip_html(&job.description);
+    let fallback_analysis = create_fallback_analysis(&cleaned_desc, &job.title);
     Ok(fallback_analysis)
 }
 
@@ -813,4 +818,10 @@ fn parse_remotive_date(date_str: &str) -> Option<String> {
     } else {
         None
     }
+}
+
+// Helper function to strip HTML tags
+fn strip_html(input: &str) -> String {
+    let re = regex::Regex::new(r"<[^>]+>").unwrap();
+    re.replace_all(input, " ").to_string()
 }

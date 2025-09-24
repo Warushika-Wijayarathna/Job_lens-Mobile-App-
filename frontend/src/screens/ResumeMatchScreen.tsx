@@ -21,37 +21,6 @@ export default function ResumeMatchScreen() {
 	const [showRecommendedJobs, setShowRecommendedJobs] = useState(false);
 	const [processingStep, setProcessingStep] = useState<'idle' | 'uploading' | 'extracting' | 'matching'>('idle');
 
-	// Sample recommended jobs to show when no AI recommendations are available
-	const recommendedJobs = [
-		{
-			title: 'Frontend Developer',
-			company: 'TechNova',
-			location: 'Remote',
-			salary: '$80k - $100k',
-			logo: require('../../assets/icon.png'),
-			saved: false,
-			matchPercentage: 85,
-		},
-		{
-			title: 'AI Engineer',
-			company: 'VisionaryAI',
-			location: 'Colombo',
-			salary: '$120k - $150k',
-			logo: require('../../assets/icon.png'),
-			saved: true,
-			matchPercentage: 92,
-		},
-		{
-			title: 'Product Designer',
-			company: 'DesignHub',
-			location: 'Remote',
-			salary: '$70k - $90k',
-			logo: require('../../assets/icon.png'),
-			saved: false,
-			matchPercentage: 78,
-		},
-	];
-
 	useEffect(() => {
 		// Clear any previous errors when component mounts
 		dispatch(clearUserError());
@@ -111,15 +80,16 @@ export default function ResumeMatchScreen() {
 				})).unwrap();
 
 				setProcessingStep('idle');
-				setShowRecommendedJobs(true);
+				// Do not toggle sample jobs after AI action; only show real results
+				setShowRecommendedJobs(false);
 				Alert.alert('Success!', 'Your resume has been processed and matched with relevant jobs.');
 			}
 		} catch (error: any) {
 			console.error('AI Matching error:', error);
 			setProcessingStep('idle');
 			Alert.alert('Error', error.message || 'Failed to process your request. Please try again.');
-			// Show recommended jobs even if AI matching fails
-			setShowRecommendedJobs(true);
+			// Do not show sample jobs on error
+			setShowRecommendedJobs(false);
 		}
 	};
 
@@ -165,6 +135,13 @@ export default function ResumeMatchScreen() {
 			default:
 				return 'Processing your request...';
 		}
+	};
+
+	// Helper to derive match percentage from backend data
+	const toMatchPercentage = (rec: any): number | undefined => {
+		if (typeof rec?.match_percentage === 'number') return rec.match_percentage;
+		if (typeof rec?.match_score === 'number') return Math.round(rec.match_score);
+		return undefined;
 	};
 
 	return (
@@ -247,88 +224,42 @@ export default function ResumeMatchScreen() {
 										<Text className="text-gray-600 mt-2">{getProcessingMessage()}</Text>
 									</View>
 								) : error ? (
+									// Show only the error and guidance; no dummy/sample jobs
 									<View>
-										<Text style={{ color: 'red', textAlign: 'center', marginBottom: 16 }}>{error}</Text>
-										{/* Show recommended jobs even when there's an error */}
-										{showRecommendedJobs && (
-											<View>
-												<Text className="text-xl font-bold text-gray-800 mb-4">
-													Recommended Jobs For You ({recommendedJobs.length})
-												</Text>
-												{recommendedJobs.map((job, i) => (
-													<MotiView
-														key={i}
-														from={{ opacity: 0, translateY: 20, scale: 0.95 }}
-														animate={{ opacity: 1, translateY: 0, scale: 1 }}
-														transition={{ type: 'timing', duration: 500, delay: i * 150 }}
-													>
-														<JobCard
-															title={job.title}
-															company={job.company}
-															location={job.location}
-															salary={job.salary}
-															saved={job.saved}
-															matchPercentage={job.matchPercentage}
-															onSave={() => {}}
-															onPress={() => handleJobPress(job)}
-														/>
-													</MotiView>
-												))}
-											</View>
-										)}
+										<Text style={{ color: 'red', textAlign: 'center', marginBottom: 8 }}>{error}</Text>
+										<Text className="text-center text-gray-500">Please try again or upload a different resume.</Text>
 									</View>
-								) : recommendations && recommendations.length > 0 ? (
+								) : (recommendations && recommendations.length > 0) ? (
 									<View>
 										<Text className="text-xl font-bold text-gray-800 mb-4">
 											AI Matched Jobs ({recommendations.length})
 										</Text>
-										{recommendations.map((rec, i) => (
-											<JobCard
-												key={i}
-												title={rec.job.title}
-												company={rec.job.company}
-												location={rec.job.location || ''}
-												salary={rec.job.salary || undefined}
-												matchPercentage={rec.match_percentage || Math.floor(Math.random() * 30) + 70}
-												onSave={() => {}}
-												onPress={() => handleJobPress({
-													title: rec.job.title,
-													company: rec.job.company,
-													location: rec.job.location || '',
-													salary: rec.job.salary || '',
-													match_percentage: rec.match_percentage || Math.floor(Math.random() * 30) + 70,
-													saved: false
-												})}
-											/>
-										))}
-									</View>
-								) : showRecommendedJobs ? (
-									<View>
-										<Text className="text-xl font-bold text-gray-800 mb-4">
-											Recommended Jobs For You ({recommendedJobs.length})
-										</Text>
-										{recommendedJobs.map((job, i) => (
-											<MotiView
-												key={i}
-												from={{ opacity: 0, translateY: 20, scale: 0.95 }}
-												animate={{ opacity: 1, translateY: 0, scale: 1 }}
-												transition={{ type: 'timing', duration: 500, delay: i * 150 }}
-											>
+										{recommendations.map((rec, i) => {
+											const pct = toMatchPercentage(rec);
+											return (
 												<JobCard
-													title={job.title}
-													company={job.company}
-													location={job.location}
-													salary={job.salary}
-													saved={job.saved}
-													matchPercentage={job.matchPercentage}
+													key={i}
+													title={rec.job.title}
+													company={rec.job.company}
+													location={rec.job.location || ''}
+													salary={rec.job.salary || undefined}
+													matchPercentage={pct}
 													onSave={() => {}}
-													onPress={() => handleJobPress(job)}
+													onPress={() => handleJobPress({
+														title: rec.job.title,
+														company: rec.job.company,
+														location: rec.job.location || '',
+														salary: rec.job.salary || '',
+														match_percentage: pct,
+														saved: false
+													})}
 												/>
-											</MotiView>
-										))}
+											);
+										})}
 									</View>
 								) : (
-									<Text className="text-center text-gray-400 mt-12">Upload your resume to get personalized job recommendations!</Text>
+									// Neutral empty state: no AI recommendations to show
+									<Text className="text-center text-gray-400 mt-12">No AI recommendations yet. Upload your resume and try again.</Text>
 								)}
 							</View>
 						</ScrollView>
