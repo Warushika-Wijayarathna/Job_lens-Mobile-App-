@@ -22,7 +22,7 @@ export default function ForgotPasswordScreen() {
             Forgot Password
           </Text>
           <Text className="text-base text-gray-600 mb-6 text-center">
-            Enter your email and we'll send you instructions to reset your password.
+            Enter your email and we&apos;ll send you instructions to reset your password.
           </Text>
           <Input
             value={email}

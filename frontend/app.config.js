@@ -32,15 +32,10 @@ export default {
       favicon: "./assets/logo-icon.png"
     },
     plugins: [
-      "expo-router"
+      "expo-mail-composer",
+      "expo-secure-store"
     ],
-    experiments: {
-      typedRoutes: true
-    },
     extra: {
-      router: {
-        origin: false
-      },
       eas: {
         projectId: "923be5ff-b43a-4dbe-83db-35ba061e0f5b"
       }

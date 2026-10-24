@@ -15,7 +15,7 @@ const tabs = [
   { label: 'Jobs', icon: Search, route: 'Jobs' },
   { label: 'Match', icon: FileText, route: 'ResumeMatch' },
   { label: 'Profile', icon: User, route: 'Profile' },
-];
+] as const;
 
 export const NavBar: React.FC<NavBarProps> = ({ activeIndex: propActiveIndex, onTabPress }) => {
   const navigation = useNavigation();

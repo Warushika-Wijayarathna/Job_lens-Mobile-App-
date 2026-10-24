@@ -2,10 +2,7 @@
 export async function extractPdfText(uri: string): Promise<string | null> {
   try {
     // Dynamically import pdf.js to keep bundles lean
-    // eslint-disable-next-line import/no-unresolved
-    const pdfjsLib = await import('pdfjs-dist/build/pdf');
-    // eslint-disable-next-line import/no-unresolved
-    await import('pdfjs-dist/build/pdf.worker.entry');
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
     const res = await fetch(uri);
     const buf = await res.arrayBuffer();

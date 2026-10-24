@@ -1,3 +1,4 @@
+import 'react-native-gesture-handler';
 import React from 'react';
 import { Provider } from 'react-redux';
 import { NavigationContainer } from '@react-navigation/native';
@@ -5,6 +6,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { useSelector } from 'react-redux';
 import { store } from './src/store';
 import type { RootState } from './src/store';
+import type { RootStackParamList } from './src/types';
 
 // Import Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -24,7 +26,7 @@ import { View } from 'react-native';
 
 import './global.css';
 
-const Stack = createStackNavigator();
+const Stack = createStackNavigator<RootStackParamList>();
 
 function AppNavigator() {
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);

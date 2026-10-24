@@ -54,7 +54,7 @@ export default function FileUpload({
 
   const removeFile = () => {
     setSelectedFile(null);
-    onFileSelect({ canceled: true, assets: [] });
+    onFileSelect({ canceled: true, assets: null });
   };
 
   return (

@@ -7,11 +7,15 @@ import { Bookmark, Building2, MapPin, DollarSign, Briefcase, Mail, Copy } from '
 import { MotiView } from 'moti';
 import { useSelector } from 'react-redux';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
+import * as MailComposer from 'expo-mail-composer';
+import Clipboard from '@react-native-clipboard/clipboard';
 import type { RootState } from '../store';
+import type { RootStackParamList } from '../types';
 
 export default function JobDetailsScreen() {
   const navigation = useNavigation();
-  const route = useRoute();
+  const route = useRoute<RouteProp<RootStackParamList, 'JobDetails'>>();
   const { jobs } = useSelector((state: RootState) => state.jobs);
 
   // Get job from route params or use first job as fallback

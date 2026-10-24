@@ -63,7 +63,7 @@ The application follows a microservices architecture with three main components:
 
 Before setting up the project, ensure you have the following installed:
 
-- **Node.js** (v18 or higher)
+- **Node.js 20 LTS** (the Expo SDK 53 build environment uses Node 20)
 - **Rust** (latest stable version)
 - **Python** (3.8 or higher)
 - **PostgreSQL** (v12 or higher)
@@ -141,13 +141,20 @@ npm install
 cp .env.example .env
 # Edit .env with your Firebase configuration and backend URL
 
+# Validate the project
+npm run typecheck
+npm run lint
+
 # Start the development server
 npm start
 
 # Run on device/simulator
 npm run ios     # For iOS
-npm run android # For Android
+npm run android # Local Android development build (requires Android Studio/JDK)
 npm run web     # For web
+
+# Create an installable Android APK with EAS Build
+npm run build:apk
 ```
 
 **Environment Variables for Frontend (.env):**
@@ -288,8 +295,8 @@ docker run -p 5000:5000 joblens-ml
 Build for production:
 ```bash
 cd frontend
-expo build:web        # For web deployment
-expo build:android     # For Android APK
+npx expo export --platform web # Static web deployment
+npm run build:apk      # Installable Android APK (EAS preview profile)
 expo build:ios         # For iOS build
 ```
 

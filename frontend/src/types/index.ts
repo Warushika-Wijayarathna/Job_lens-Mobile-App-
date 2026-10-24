@@ -127,9 +127,23 @@ export type FeedbackType =
 
 // Navigation Types
 export type RootStackParamList = {
-  Auth: undefined;
-  Main: undefined;
+  Login: undefined;
+  Register: undefined;
+  ForgotPassword: undefined;
+  Onboarding: undefined;
+  Home: undefined;
+  Jobs: undefined;
+  ResumeMatch: undefined;
+  Profile: undefined;
+  JobDetails: { jobData?: Job; jobId?: string } | undefined;
+  Notifications: undefined;
 };
+
+declare global {
+  namespace ReactNavigation {
+    interface RootParamList extends RootStackParamList {}
+  }
+}
 
 export type AuthStackParamList = {
   Login: undefined;
